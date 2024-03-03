@@ -19,6 +19,13 @@ The database shared common dependency is already included in this project as a d
 </dependency>
 ```
 
+## Environment Variables
+
+| Environment Variables      | Description                                                                                                                                                                                                                           |
+|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| SPRING_DATASOURCE_URL      | The fully qualified url to the database. Expects the database connection string as of the defined schema by the used database. This projects expects per default a postgres database. A default value is given for local deployments. |
+| SPRING_DATASOURCE_PASSWORD | The password of the database. A default value is given for local deployments.                                                                                                                                                         |
+
 ## Spring Initializr Template
 https://start.spring.io/#!type=maven-project&language=java&platformVersion=3.2.3&packaging=jar&jvmVersion=21&groupId=de.leipzig.htwk.gitrdf.sparql&artifactId=query&name=query&description=Archetype%20project%20for%20HTWK%20Leipzig%20-%20Project%20to%20transform%20git%20to%20RDF&packageName=de.leipzig.htwk.gitrdf.sparql.query&dependencies=web,lombok,devtools,data-jpa,postgresql,testcontainers
 
