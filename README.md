@@ -1,4 +1,4 @@
-# Prototype for performing SparkQL-Queries onto finished rdf conversion entries
+# Prototype for performing SparQL-Queries onto finished rdf conversion entries
 
 ## Dependency notice
 
