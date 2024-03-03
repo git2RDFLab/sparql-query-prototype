@@ -4,9 +4,9 @@ spring:
       ddl-auto: none # validate
     #defer-datasource-initialization: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/gitrdfdb
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/gitrdfdb}
     username: root
-    password: example # temporary for prototyping
+    password: ${SPRING_DATASOURCE_PASSWORD:example} # temporary for prototyping
 
 server:
-  port: 7080
+  port: 8080 # env SERVER_PORT can be used to set server port from outside via env variable -> set to 8080, because we can usually rely on docker networking
