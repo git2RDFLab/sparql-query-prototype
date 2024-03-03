@@ -1,22 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
 	<modelVersion>4.0.0</modelVersion>
+
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.2.3</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
+
 	<groupId>de.leipzig.htwk.gitrdf.sparql</groupId>
 	<artifactId>query</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+
 	<name>query</name>
-	<description>Archetype project for HTWK Leipzig - Project to transform git to RDF</description>
+
+	<description>Archetype project for HTWK Leipzig - Project to query rdf entries via SparQL-Queries</description>
+
 	<properties>
 		<java.version>21</java.version>
+
+		<org.eclipse.jgit.version>3.5.0.201409260305-r</org.eclipse.jgit.version>
+		<org.apache.commons.commons-rdf-api.version>0.5.0</org.apache.commons.commons-rdf-api.version>
+		<org.apache.commons.commons-rdf-jena.version>0.5.0</org.apache.commons.commons-rdf-jena.version>
+
+		<de.leipzig.htwk.gitrdf.database.common.version>1.0.3-SNAPSHOT</de.leipzig.htwk.gitrdf.database.common.version>
 	</properties>
+
 	<dependencies>
+
+		<dependency>
+			<groupId>de.leipzig.htwk.gitrdf.database</groupId>
+			<artifactId>common</artifactId>
+			<version>${de.leipzig.htwk.gitrdf.database.common.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -62,6 +82,26 @@
 			<artifactId>postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- JGit and RDF -->
+		<dependency>
+			<groupId>org.eclipse.jgit</groupId>
+			<artifactId>org.eclipse.jgit</artifactId>
+			<version>${org.eclipse.jgit.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-rdf-api</artifactId>
+			<version>${org.apache.commons.commons-rdf-api.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-rdf-jena</artifactId>
+			<version>${org.apache.commons.commons-rdf-jena.version}</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

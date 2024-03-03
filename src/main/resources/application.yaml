@@ -1,0 +1,12 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none # validate
+    #defer-datasource-initialization: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/gitrdfdb
+    username: root
+    password: example # temporary for prototyping
+
+server:
+  port: 7080
