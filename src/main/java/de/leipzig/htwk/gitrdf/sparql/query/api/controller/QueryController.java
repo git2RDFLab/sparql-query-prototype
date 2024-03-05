@@ -23,6 +23,7 @@ import java.sql.SQLException;
 public class QueryController {
 
     // for more infos regarding a sparql conform api: https://www.w3.org/TR/sparql11-protocol/
+    // https://www.w3.org/2001/sw/DataAccess/rq23/#ask
 
     private final SparqlQueryServiceImpl sparqlQueryService;
 
