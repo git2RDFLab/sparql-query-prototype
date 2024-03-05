@@ -1,8 +1,8 @@
 package de.leipzig.htwk.gitrdf.sparql.query.api.controller;
 
+import de.leipzig.htwk.gitrdf.sparql.query.api.model.request.QueryRequest;
 import de.leipzig.htwk.gitrdf.sparql.query.service.impl.SparqlQueryServiceImpl;
 import de.leipzig.htwk.gitrdf.sparql.query.utils.LongUtils;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
@@ -21,28 +21,47 @@ import java.sql.SQLException;
 @Slf4j
 public class QueryController {
 
+    // for more infos regarding a sparql conform api: https://www.w3.org/TR/sparql11-protocol/
+
     private final SparqlQueryServiceImpl sparqlQueryService;
+
+    @GetMapping(value = "/api/v1/github/rdf/query/{id}", produces = "application/sparql-results+json")
+    public @ResponseBody Resource getResultOfGetQuery(
+            @PathVariable("id") String id,
+            @RequestParam("query") String query) throws SQLException, IOException {
+
+        return getQueryJsonResultResponseFrom(id, query);
+    }
 
     @PostMapping(
             value = "/api/v1/github/rdf/query/{id}",
-            consumes = MediaType.TEXT_PLAIN_VALUE,
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public @ResponseBody Resource getResultOfQuery(
-            @PathVariable("id") String id ,
-            @RequestBody String query, HttpServletResponse httpServletResponse) throws SQLException, IOException {
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+            produces = "application/sparql-results+json")
+    public @ResponseBody Resource getResultOfPostQueryFormEncoded(
+            @PathVariable("id") String id,
+            QueryRequest queryRequest) throws SQLException, IOException {
 
-        long longId = LongUtils.convertStringToLongIdOrThrowException(id);
+        return getQueryJsonResultResponseFrom(id, queryRequest.getQuery());
+    }
+
+    @PostMapping(
+            value = "/api/v1/github/rdf/query/{id}",
+            consumes = "application/sparql-query",
+            produces = "application/sparql-results+json")
+    public @ResponseBody Resource getResultOfPostQueryDirectRequest(
+            @PathVariable("id") String id,
+            @RequestBody String query) throws SQLException, IOException {
+
+        return getQueryJsonResultResponseFrom(id, query);
+    }
+
+    private Resource getQueryJsonResultResponseFrom(String entityId, String query) throws SQLException, IOException {
+
+        long longId = LongUtils.convertStringToLongIdOrThrowException(entityId);
 
         File tempRdfQueryResultJsonFile = sparqlQueryService.performSparqlQuery(longId, query);
 
-        Resource responseResource
-                = new InputStreamResource(new BufferedInputStream(new FileInputStream(tempRdfQueryResultJsonFile)));
-
-        httpServletResponse.setHeader("Content-Disposition", "attachment; filename=\"query-result.json\"");
-
-        return responseResource;
+        return new InputStreamResource(new BufferedInputStream(new FileInputStream(tempRdfQueryResultJsonFile)));
     }
-
-
 
 }

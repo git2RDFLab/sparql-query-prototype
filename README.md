@@ -31,6 +31,7 @@ https://start.spring.io/#!type=maven-project&language=java&platformVersion=3.2.3
 
 
 ## CURL-Example to perform SparQL-Query and to get result
-curl -XPOST -H "Content-type: text/plain" -d $'PREFIX git: <git://>\n\nSELECT ?commit WHERE { ?commit git:AuthorName "emmanuel" . }' localhost:7080/api/v1/github/rdf/query/{id} -o "query-result.json"
+curl -XPOST -H "Content-type: application/sparql-query" -d $'PREFIX git: <git://>\n\nSELECT ?commit WHERE { ?commit git:AuthorName "emmanuel" . }' localhost:7080/api/v1/github/rdf/query/{id} -o "query-result.json"
 
-
+## SparQL-Query execution alternatives
+SparQL-Queries can also be performed by going to https://yasgui.triply.cc/ and using its api

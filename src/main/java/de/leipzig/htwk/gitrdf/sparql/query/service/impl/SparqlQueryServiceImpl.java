@@ -31,7 +31,7 @@ public class SparqlQueryServiceImpl {
     @Transactional(rollbackFor = {SQLException.class, IOException.class}) // Runtime-Exceptions are rollbacked by default; Checked-Exceptions not
     public File performSparqlQuery(long entryId, String queryString) throws SQLException, IOException {
 
-        File jsonResultRdfFile = File.createTempFile("json-result-rdf-file", "json");
+        File resultRdfFile = File.createTempFile("json-result-rdf-file", "json");
 
         GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs
                 = entityManager.find(GithubRepositoryOrderEntityLobs.class, entryId);
@@ -58,13 +58,28 @@ public class SparqlQueryServiceImpl {
 
             Query rdfQuery = QueryFactory.create(queryString);
 
-            try (QueryExecution queryExecution = QueryExecutionFactory.create(rdfQuery, rdfModel)) {
+            if (rdfQuery.isAskType()) {
 
-                ResultSet resultSet = queryExecution.execSelect();
+                try (QueryExecution queryExecution = QueryExecutionFactory.create(rdfQuery, rdfModel)) {
 
-                // source: https://www.w3.org/TR/sparql12-results-json/#json-result-object
-                try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(jsonResultRdfFile))) {
-                    ResultSetFormatter.outputAsJSON(outputStream, resultSet);
+                    boolean askResult = queryExecution.execAsk();
+
+                    if (askResult) de.leipzig.htwk.gitrdf.sparql.query.utils.FileUtils.writeSimpleStringToFile("yes", resultRdfFile);
+                    else de.leipzig.htwk.gitrdf.sparql.query.utils.FileUtils.writeSimpleStringToFile("no", resultRdfFile);
+
+                }
+
+            } else {
+
+                try (QueryExecution queryExecution = QueryExecutionFactory.create(rdfQuery, rdfModel)) {
+
+                    ResultSet resultSet = queryExecution.execSelect();
+
+                    // source: https://www.w3.org/TR/sparql12-results-json/#json-result-object
+                    try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(resultRdfFile))) {
+                        ResultSetFormatter.outputAsJSON(outputStream, resultSet);
+                    }
+
                 }
 
             }
@@ -73,7 +88,7 @@ public class SparqlQueryServiceImpl {
             if (tempRdfFile != null) FileUtils.deleteQuietly(tempRdfFile);
         }
 
-        return jsonResultRdfFile;
+        return resultRdfFile;
     }
 
     private File getTempRdfFile(GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs) throws IOException, SQLException {
