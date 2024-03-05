@@ -19,13 +19,14 @@ import java.sql.SQLException;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@RequestMapping(path = "/query-service/api/v1/github")
 public class QueryController {
 
     // for more infos regarding a sparql conform api: https://www.w3.org/TR/sparql11-protocol/
 
     private final SparqlQueryServiceImpl sparqlQueryService;
 
-    @GetMapping(value = "/api/v1/github/rdf/query/{id}", produces = "application/sparql-results+json")
+    @GetMapping(value = "/rdf/query/{id}", produces = "application/sparql-results+json")
     public @ResponseBody Resource getResultOfGetQuery(
             @PathVariable("id") String id,
             @RequestParam("query") String query) throws SQLException, IOException {
@@ -34,7 +35,7 @@ public class QueryController {
     }
 
     @PostMapping(
-            value = "/api/v1/github/rdf/query/{id}",
+            value = "/rdf/query/{id}",
             consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             produces = "application/sparql-results+json")
     public @ResponseBody Resource getResultOfPostQueryFormEncoded(
@@ -45,7 +46,7 @@ public class QueryController {
     }
 
     @PostMapping(
-            value = "/api/v1/github/rdf/query/{id}",
+            value = "/rdf/query/{id}",
             consumes = "application/sparql-query",
             produces = "application/sparql-results+json")
     public @ResponseBody Resource getResultOfPostQueryDirectRequest(
