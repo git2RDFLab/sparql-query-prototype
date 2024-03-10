@@ -11,16 +11,16 @@ public class BadRequestException extends RuntimeException {
         String reason = String.format("Invalid id '%s' was given", idString);
         String solution = "Provide a valid id. Example id: 55";
 
-        String message = String.format("Status: %s, Reason: %s, Solution: %s", status, reason, solution);
+        String message = getMessageFrom(status, reason, solution);
 
         return new BadRequestException(message, status, reason, solution);
     }
 
-    public static BadRequestException githubEntryNotFound(long id) {
+    public static BadRequestException emptySparqlQueryString() {
 
         String status = "Bad Request";
-        String reason = String.format("No github to rdf entry found for id '%d'", id);
-        String solution = "Provide an id for an existing github to rdf entry";
+        String reason = "Empty sparql-query given";
+        String solution = "Provide a non empty and valid sparql-query";
 
         String message = getMessageFrom(status, reason, solution);
 

@@ -10,3 +10,9 @@ spring:
 
 server:
   port: 8080 # env SERVER_PORT can be used to set server port from outside via env variable -> set to 8080, because we can usually rely on docker networking
+
+springdoc:
+  api-docs:
+    path: /query-service/api-docs
+  swagger-ui:
+    path: /query-service/swagger

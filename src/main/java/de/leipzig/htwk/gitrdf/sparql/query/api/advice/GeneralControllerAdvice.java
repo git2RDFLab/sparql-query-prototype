@@ -1,8 +1,10 @@
 package de.leipzig.htwk.gitrdf.sparql.query.api.advice;
 
 import de.leipzig.htwk.gitrdf.sparql.query.api.exception.BadRequestException;
+import de.leipzig.htwk.gitrdf.sparql.query.api.exception.NotFoundException;
 import de.leipzig.htwk.gitrdf.sparql.query.api.response.error.BadRequestErrorResponse;
 import de.leipzig.htwk.gitrdf.sparql.query.api.response.error.InternalServerErrorResponse;
+import de.leipzig.htwk.gitrdf.sparql.query.api.response.error.NotFoundErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,16 @@ public class GeneralControllerAdvice {
                 = new BadRequestErrorResponse(ex.getStatus(), ex.getReason(), ex.getSolution());
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(value = NotFoundException.class)
+    public ResponseEntity<NotFoundErrorResponse> handleNotFoundException(NotFoundException ex) {
+
+        log.info("Not found exception during request handling.", ex);
+
+        NotFoundErrorResponse response = new NotFoundErrorResponse(ex.getStatus(), ex.getReason(), ex.getSolution());
+
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(value = IOException.class)

@@ -4,6 +4,7 @@ import de.leipzig.htwk.gitrdf.database.common.entity.GithubRepositoryOrderEntity
 import de.leipzig.htwk.gitrdf.database.common.entity.enums.GitRepositoryOrderStatus;
 import de.leipzig.htwk.gitrdf.database.common.entity.lob.GithubRepositoryOrderEntityLobs;
 import de.leipzig.htwk.gitrdf.sparql.query.api.exception.BadRequestException;
+import de.leipzig.htwk.gitrdf.sparql.query.api.exception.NotFoundException;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
@@ -37,7 +38,7 @@ public class SparqlQueryServiceImpl {
                 = entityManager.find(GithubRepositoryOrderEntityLobs.class, entryId);
 
         if (githubRepositoryOrderEntityLobs == null) {
-            throw BadRequestException.githubEntryNotFound(entryId);
+            throw NotFoundException.githubEntryNotFound(entryId);
         }
 
         GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
