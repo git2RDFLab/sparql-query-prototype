@@ -5,9 +5,12 @@ import de.leipzig.htwk.gitrdf.database.common.entity.enums.GitRepositoryOrderSta
 import de.leipzig.htwk.gitrdf.database.common.entity.lob.GithubRepositoryOrderEntityLobs;
 import de.leipzig.htwk.gitrdf.sparql.query.api.exception.BadRequestException;
 import de.leipzig.htwk.gitrdf.sparql.query.api.exception.NotFoundException;
+import de.leipzig.htwk.gitrdf.sparql.query.timemeasurement.TimeLog;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -19,6 +22,7 @@ import java.sql.SQLException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SparqlQueryServiceImpl {
 
     private final int FIFTY_MEGABYTE = 1024 * 1024 * 50;
@@ -50,6 +54,13 @@ public class SparqlQueryServiceImpl {
         File tempRdfFile = null;
 
         try {
+            log.info("Start Query");
+            TimeLog timeLog = new TimeLog();
+            timeLog.setEntryId(entryId);
+
+            StopWatch watch = new StopWatch();
+
+            watch.start();
 
             tempRdfFile = getTempRdfFile(githubRepositoryOrderEntityLobs);
 
@@ -84,7 +95,9 @@ public class SparqlQueryServiceImpl {
                 }
 
             }
-
+            watch.stop();
+            timeLog.setTotalTime(watch.getTime());
+            timeLog.printTimes();
         } finally {
             if (tempRdfFile != null) FileUtils.deleteQuietly(tempRdfFile);
         }
