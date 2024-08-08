@@ -55,54 +55,93 @@ public class SparqlQueryServiceImpl {
 
         try {
             log.info("Start Query");
+            log.info("Warming up JVM");
+            performWarmUpQuery(githubRepositoryOrderEntityLobs);
             TimeLog timeLog = new TimeLog();
             timeLog.setEntryId(entryId);
 
-            StopWatch watch = new StopWatch();
+            long totalElapsedTime = 0;
 
-            watch.start();
+            for (int i = 0; i < 10; i++) {
+                StopWatch watch = new StopWatch();
+                watch.start();
 
-            tempRdfFile = getTempRdfFile(githubRepositoryOrderEntityLobs);
+                try {
+                    tempRdfFile = getTempRdfFile(githubRepositoryOrderEntityLobs);
+                    Model rdfModel = ModelFactory.createDefaultModel();
+                    rdfModel.read(tempRdfFile.getAbsolutePath(), TURTLE_FORMAT);
 
-            Model rdfModel = ModelFactory.createDefaultModel();
+                    Query rdfQuery = QueryFactory.create(queryString);
 
-            rdfModel.read(tempRdfFile.getAbsolutePath(), TURTLE_FORMAT);
-
-            Query rdfQuery = QueryFactory.create(queryString);
-
-            if (rdfQuery.isAskType()) {
-
-                try (QueryExecution queryExecution = QueryExecutionFactory.create(rdfQuery, rdfModel)) {
-
-                    boolean askResult = queryExecution.execAsk();
-
-                    if (askResult) de.leipzig.htwk.gitrdf.sparql.query.utils.FileUtils.writeSimpleStringToFile("yes", resultRdfFile);
-                    else de.leipzig.htwk.gitrdf.sparql.query.utils.FileUtils.writeSimpleStringToFile("no", resultRdfFile);
-
-                }
-
-            } else {
-
-                try (QueryExecution queryExecution = QueryExecutionFactory.create(rdfQuery, rdfModel)) {
-
-                    ResultSet resultSet = queryExecution.execSelect();
-
-                    // source: https://www.w3.org/TR/sparql12-results-json/#json-result-object
-                    try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(resultRdfFile))) {
-                        ResultSetFormatter.outputAsJSON(outputStream, resultSet);
+                    if (rdfQuery.isAskType()) {
+                        try (QueryExecution queryExecution = QueryExecutionFactory.create(rdfQuery, rdfModel)) {
+                            boolean askResult = queryExecution.execAsk();
+                            if (askResult) {
+                                de.leipzig.htwk.gitrdf.sparql.query.utils.FileUtils.writeSimpleStringToFile("yes", resultRdfFile);
+                            } else {
+                                de.leipzig.htwk.gitrdf.sparql.query.utils.FileUtils.writeSimpleStringToFile("no", resultRdfFile);
+                            }
+                        }
+                    } else {
+                        try (QueryExecution queryExecution = QueryExecutionFactory.create(rdfQuery, rdfModel)) {
+                            ResultSet resultSet = queryExecution.execSelect();
+                            try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(resultRdfFile))) {
+                                ResultSetFormatter.outputAsJSON(outputStream, resultSet);
+                            }
+                        }
                     }
-
+                } finally {
+                    if (tempRdfFile != null) {
+                        FileUtils.deleteQuietly(tempRdfFile);
+                    }
                 }
 
+                watch.stop();
+                long elapsedTime = watch.getTime();
+                totalElapsedTime += elapsedTime;
+
+                log.info("Iteration " + (i + 1) + " completed in " + elapsedTime + " ms");
             }
-            watch.stop();
-            timeLog.setTotalTime(watch.getTime());
+
+            long averageTime = totalElapsedTime / 10;
+            timeLog.setTotalTime(averageTime);
             timeLog.printTimes();
+
+
         } finally {
             if (tempRdfFile != null) FileUtils.deleteQuietly(tempRdfFile);
         }
 
         return resultRdfFile;
+    }
+
+    private void performWarmUpQuery(GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs) {
+        File tempRdfFile = null;
+        try {
+            // Temporäre RDF-Datei erstellen
+            tempRdfFile = getTempRdfFile(githubRepositoryOrderEntityLobs);
+
+            // RDF-Modell erstellen und Datei einlesen
+            Model rdfModel = ModelFactory.createDefaultModel();
+            rdfModel.read(tempRdfFile.getAbsolutePath(), TURTLE_FORMAT);
+
+            // Eine einfache SPARQL-Abfrage erstellen
+            String warmUpQueryString = "ASK WHERE { ?s ?p ?o }";
+            Query warmUpQuery = QueryFactory.create(warmUpQueryString);
+
+            // Abfrage ausführen (in diesem Fall eine einfache ASK-Abfrage)
+            try (QueryExecution queryExecution = QueryExecutionFactory.create(warmUpQuery, rdfModel)) {
+                queryExecution.execAsk(); // Ergebnis ist irrelevant, es geht nur um das Ausführen der Abfrage
+            }
+
+        } catch (Exception e) {
+            log.error("Error during JVM warm-up query", e);
+        } finally {
+            // Temporäre Datei löschen
+            if (tempRdfFile != null) {
+                FileUtils.deleteQuietly(tempRdfFile);
+            }
+        }
     }
 
     private File getTempRdfFile(GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs) throws IOException, SQLException {
