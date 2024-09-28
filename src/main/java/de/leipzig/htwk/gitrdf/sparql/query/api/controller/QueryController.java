@@ -34,17 +34,17 @@ import java.sql.SQLException;
 @Tag(name = "Query API")
 public class QueryController {
 
-    // for more infos regarding a sparql conform api: https://www.w3.org/TR/sparql11-protocol/
+    // for more infos regarding a SPARQL conform api: https://www.w3.org/TR/sparql11-protocol/
     // https://www.w3.org/2001/sw/DataAccess/rq23/#ask
 
     private final SparqlQueryServiceImpl sparqlQueryService;
 
     @Operation(
-            summary = "Perform a sparql-query on the produced rdf of the github entry corresponding to the id",
+            summary = "Perform a SPARQL-Query on the produced rdf of the github entry corresponding to the id",
             description = "Provide the query as a query parameter named 'query'")
     @ApiResponse(
             responseCode = "200",
-            description = "SparQL-Query result in json",
+            description = "SPARQL-Query result in json",
             content = @Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(example = "{\"head\": {\"vars\": [ \"commit\" ]} ,\"results\": {\"bindings\": [{\"commit\": { \"type\": \"uri\" , \"value\": \"https://github.com/dotnet/core/commit/b0ec7806d47408656cb17230f8875cc9413064e0\"}}]}}")))
@@ -62,7 +62,7 @@ public class QueryController {
                             @ExampleObject(
                                     name = "Empty query string was given",
                                     description = "Empty query string was given",
-                                    value = "{\"status\": \"Bad Request\", \"reason\": \"Empty sparql-query given\", \"solution\": \"Provide a non empty and valid sparql-query\"}"),
+                                    value = "{\"status\": \"Bad Request\", \"reason\": \"Empty SPARQL-Query given\", \"solution\": \"Provide a non empty and valid sparql-query\"}"),
                             @ExampleObject(
                                     name = "Github entry was not yet processed and rdf was not yet produced",
                                     description = "Github entry was not yet processed and rdf was not yet produced",
@@ -88,11 +88,11 @@ public class QueryController {
     }
 
     @Operation(
-            summary = "Perform a sparql-query on the produced rdf of the github entry corresponding to the id",
+            summary = "Perform a SPARQL-Query on the produced rdf of the github entry corresponding to the id",
             description = "Provide the query url encoded in the request body as 'query' field")
     @ApiResponse(
             responseCode = "200",
-            description = "SparQL-Query result in json",
+            description = "SPARQL-Query result in json",
             content = @Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(example = "{\"head\": {\"vars\": [ \"commit\" ]} ,\"results\": {\"bindings\": [{\"commit\": { \"type\": \"uri\" , \"value\": \"https://github.com/dotnet/core/commit/b0ec7806d47408656cb17230f8875cc9413064e0\"}}]}}")))
@@ -110,7 +110,7 @@ public class QueryController {
                             @ExampleObject(
                                     name = "Empty query string was given",
                                     description = "Empty query string was given",
-                                    value = "{\"status\": \"Bad Request\", \"reason\": \"Empty sparql-query given\", \"solution\": \"Provide a non empty and valid sparql-query\"}"),
+                                    value = "{\"status\": \"Bad Request\", \"reason\": \"Empty SPARQL-Query given\", \"solution\": \"Provide a non empty and valid sparql-query\"}"),
                             @ExampleObject(
                                     name = "Github entry was not yet processed and rdf was not yet produced",
                                     description = "Github entry was not yet processed and rdf was not yet produced",
@@ -128,7 +128,7 @@ public class QueryController {
                                     value = "{\"status\": \"Not found\", \"reason\": \"No github to rdf entry found for id '3'\", \"solution\": \"Provide an id for an existing github to rdf entry\"}")}))
     @GeneralInternalServerErrorApiResponse
     @PostMapping(
-            value = "/rdf/query/{id}",
+            value = "/rdf/query/encoded/{id}",
             consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             produces = "application/sparql-results+json")
     public @ResponseBody Resource getResultOfPostQueryFormEncoded(
@@ -139,11 +139,11 @@ public class QueryController {
     }
 
     @Operation(
-            summary = "Perform a sparql-query on the produced rdf of the github entry corresponding to the id",
+            summary = "Perform a SPARQL-query on the produced rdf of the github entry corresponding to the id",
             description = "Provide the query directly in the body")
     @ApiResponse(
             responseCode = "200",
-            description = "SparQL-Query result in json",
+            description = "SPARQL-Query result in json",
             content = @Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(example = "{\"head\": {\"vars\": [ \"commit\" ]} ,\"results\": {\"bindings\": [{\"commit\": { \"type\": \"uri\" , \"value\": \"https://github.com/dotnet/core/commit/b0ec7806d47408656cb17230f8875cc9413064e0\"}}]}}")))
@@ -161,7 +161,7 @@ public class QueryController {
                             @ExampleObject(
                                     name = "Empty query string was given",
                                     description = "Empty query string was given",
-                                    value = "{\"status\": \"Bad Request\", \"reason\": \"Empty sparql-query given\", \"solution\": \"Provide a non empty and valid sparql-query\"}"),
+                                    value = "{\"status\": \"Bad Request\", \"reason\": \"Empty SPARQL-Query given\", \"solution\": \"Provide a non empty and valid sparql-query\"}"),
                             @ExampleObject(
                                     name = "Github entry was not yet processed and rdf was not yet produced",
                                     description = "Github entry was not yet processed and rdf was not yet produced",

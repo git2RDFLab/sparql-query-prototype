@@ -17,7 +17,7 @@
 
 	<name>query</name>
 
-	<description>Archetype project for HTWK Leipzig - Project to query rdf entries via SparQL-Queries</description>
+	<description>Archetype project for HTWK Leipzig - Project to query rdf entries via SPARQL-Queries</description>
 
 	<properties>
 		<java.version>21</java.version>

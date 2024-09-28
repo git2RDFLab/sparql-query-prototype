@@ -19,8 +19,8 @@ public class BadRequestException extends RuntimeException {
     public static BadRequestException emptySparqlQueryString() {
 
         String status = "Bad Request";
-        String reason = "Empty sparql-query given";
-        String solution = "Provide a non empty and valid sparql-query";
+        String reason = "Empty SPARQL-Query given";
+        String solution = "Provide a non empty and valid SPARQL-Query";
 
         String message = getMessageFrom(status, reason, solution);
 

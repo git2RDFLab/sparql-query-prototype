@@ -1,4 +1,4 @@
-# Prototype for performing SparQL-Queries onto finished rdf conversion entries
+# Prototype for performing SPARQL-Queries onto finished rdf conversion entries
 
 ## Dependency notice
 
@@ -30,8 +30,8 @@ The database shared common dependency is already included in this project as a d
 https://start.spring.io/#!type=maven-project&language=java&platformVersion=3.2.3&packaging=jar&jvmVersion=21&groupId=de.leipzig.htwk.gitrdf.sparql&artifactId=query&name=query&description=Archetype%20project%20for%20HTWK%20Leipzig%20-%20Project%20to%20transform%20git%20to%20RDF&packageName=de.leipzig.htwk.gitrdf.sparql.query&dependencies=web,lombok,devtools,data-jpa,postgresql,testcontainers
 
 
-## CURL-Example to perform SparQL-Query and to get result
+## CURL-Example to perform SPARQL-Query and to get result
 curl -XPOST -H "Content-type: application/sparql-query" -d $'PREFIX git: <git://>\n\nSELECT ?commit WHERE { ?commit git:AuthorName "emmanuel" . }' localhost:7080/query-service/api/v1/github/rdf/query/{id} -o "query-result.json"
 
-## SparQL-Query execution alternatives
-SparQL-Queries can also be performed by going to https://yasgui.triply.cc/ and using its api
+## SPARQL-Query execution alternatives
+SPARQL-Queries can also be performed by going to https://yasgui.triply.cc/ and using its api
