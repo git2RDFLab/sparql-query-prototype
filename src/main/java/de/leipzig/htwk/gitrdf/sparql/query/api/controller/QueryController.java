@@ -46,7 +46,7 @@ public class QueryController {
             responseCode = "200",
             description = "SPARQL-Query result in json",
             content = @Content(
-                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    mediaType = "application/sparql-results+json",
                     schema = @Schema(example = "{\"head\": {\"vars\": [ \"commit\" ]} ,\"results\": {\"bindings\": [{\"commit\": { \"type\": \"uri\" , \"value\": \"https://github.com/dotnet/core/commit/b0ec7806d47408656cb17230f8875cc9413064e0\"}}]}}")))
     @ApiResponse(
             responseCode = "400",
@@ -94,7 +94,7 @@ public class QueryController {
             responseCode = "200",
             description = "SPARQL-Query result in json",
             content = @Content(
-                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    mediaType = "application/sparql-results+json",
                     schema = @Schema(example = "{\"head\": {\"vars\": [ \"commit\" ]} ,\"results\": {\"bindings\": [{\"commit\": { \"type\": \"uri\" , \"value\": \"https://github.com/dotnet/core/commit/b0ec7806d47408656cb17230f8875cc9413064e0\"}}]}}")))
     @ApiResponse(
             responseCode = "400",
@@ -145,7 +145,7 @@ public class QueryController {
             responseCode = "200",
             description = "SPARQL-Query result in json",
             content = @Content(
-                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    mediaType = "application/sparql-results+json",
                     schema = @Schema(example = "{\"head\": {\"vars\": [ \"commit\" ]} ,\"results\": {\"bindings\": [{\"commit\": { \"type\": \"uri\" , \"value\": \"https://github.com/dotnet/core/commit/b0ec7806d47408656cb17230f8875cc9413064e0\"}}]}}")))
     @ApiResponse(
             responseCode = "400",
