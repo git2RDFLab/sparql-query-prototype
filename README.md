@@ -1,37 +1,53 @@
-# Prototype for performing SPARQL-Queries onto finished rdf conversion entries
+<a href="https://github.com/git2RDFLab/"><img align="right" role="right" height="96" src="https://github.com/git2RDFLab/.github/blob/main/profile/images/GitLotus-logo.png?raw=true" style="height: 96px;z-index: 1000000" title="GitLotus" alt="GitLotus"/></a>
 
-## Dependency notice
+# GitLotus component -- Web service handling SPARQL queries on RDF-converted Git repositories
 
-In order to remove duplicate database jpa definitions, a shared database commons project was introduced, which is used
-in all projects, that share the mentioned jpa entities and logic.
-The project can be found under: https://github.com/git2RDFLab/database-shared-common
+The component is available as a Docker image [superdose/git2rdf-query-service](https://hub.docker.com/r/superdose/git2rdf-query-service/tags).
+See the repository [project-deployment-compose](https://github.com/git2RDFLab/project-deployment-compose/tree/main) for a prepared Docker container starting and configuration script.
 
-In order to compile this project you have to pull the shared database common project and install the maven artifact locally
-(via: `mvn clean install`) as dependency, so this project can find the necessary dependency.
+## Build and execution environment
 
-The database shared common dependency is already included in this project as a dependency in the pom with
+The [Spring Boot](https://spring.io/projects/spring-boot) service can be created using [Apache Maven](https://maven.apache.org/).
 
+```ShellSession
+git clone git@github.com:git2RDFLab/sparql-query-prototype.git
+cd sparql-query-prototype
+mvn package
 ```
-<dependency>
-	<groupId>de.leipzig.htwk.gitrdf.database</groupId>
-	<artifactId>common</artifactId>
-	<version>${de.leipzig.htwk.gitrdf.database.common.version}</version>
-</dependency>
-```
+
+See the folder `target` for the executable JAR file.
+
+**Dependency notice:** To remove duplicate database [JPA](https://spring.io/projects/spring-data-jpa) definitions, a shared database commons project was introduced. See [database-shared-common](https://github.com/git2RDFLab/database-shared-common/) for installing this GitLotus-specific dependency.
 
 ## Environment Variables
 
 | Environment Variables      | Description                                                                                                                                                                                                                           |
 |----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| SPRING_DATASOURCE_URL      | The fully qualified url to the database. Expects the database connection string as of the defined schema by the used database. This projects expects per default a postgres database. A default value is given for local deployments. |
-| SPRING_DATASOURCE_PASSWORD | The password of the database. A default value is given for local deployments.                                                                                                                                                         |
+| `SPRING_DATASOURCE_URL`      | The fully qualified URL to the database. Expects the database connection string as of the defined schema by the used database. This project expects per default a PostgreSQL database. A default value is given for local deployments. |
+| `SPRING_DATASOURCE_PASSWORD` | The password of the database. A default value is given for local deployments.                                                                                                                                                         |
 
-## Spring Initializr Template
-https://start.spring.io/#!type=maven-project&language=java&platformVersion=3.2.3&packaging=jar&jvmVersion=21&groupId=de.leipzig.htwk.gitrdf.sparql&artifactId=query&name=query&description=Archetype%20project%20for%20HTWK%20Leipzig%20-%20Project%20to%20transform%20git%20to%20RDF&packageName=de.leipzig.htwk.gitrdf.sparql.query&dependencies=web,lombok,devtools,data-jpa,postgresql,testcontainers
+[Spring Initializr Template](https://start.spring.io/#!type=maven-project&language=java&platformVersion=3.2.3&packaging=jar&jvmVersion=21&groupId=de.leipzig.htwk.gitrdf.sparql&artifactId=query&name=query&description=Archetype%20project%20for%20HTWK%20Leipzig%20-%20Project%20to%20transform%20git%20to%20RDF&packageName=de.leipzig.htwk.gitrdf.sparql.query&dependencies=web,lombok,devtools,data-jpa,postgresql,testcontainers)
 
 
-## CURL-Example to perform SPARQL-Query and to get result
+## Example requests
+
+### CURL example to perform a SPARQL query and to get JSON result
+
+```ShellSession
 curl -XPOST -H "Content-type: application/sparql-query" -d $'PREFIX git: <git://>\n\nSELECT ?commit WHERE { ?commit git:AuthorName "emmanuel" . }' localhost:7080/query-service/api/v1/github/rdf/query/{id} -o "query-result.json"
+```
 
-## SPARQL-Query execution alternatives
-SPARQL-Queries can also be performed by going to https://yasgui.triply.cc/ and using its api
+### SPARQL query execution alternatives
+
+SPARQL queries can also be performed by using https://yasgui.triply.cc/.
+
+## Contribute
+
+We are happy to receive your contributions. 
+Please create a pull request or an issue. 
+As this tool is published under the MIT license, feel free to fork it and use it in your own projects.
+
+## Disclaimer
+
+This tool just temporarily stores the image data. 
+It is provided "as is" and without any warranty, express or implied.
