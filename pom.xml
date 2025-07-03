@@ -25,7 +25,7 @@
 		<org.eclipse.jgit.version>3.5.0.201409260305-r</org.eclipse.jgit.version>
 		<org.apache.commons.commons-rdf-api.version>0.5.0</org.apache.commons.commons-rdf-api.version>
 		<org.apache.commons.commons-rdf-jena.version>0.5.0</org.apache.commons.commons-rdf-jena.version>
-
+		<lombok.version>1.18.30</lombok.version>
 		<de.leipzig.htwk.gitrdf.database.common.version>1.0.6-SNAPSHOT</de.leipzig.htwk.gitrdf.database.common.version>
 	</properties>
 
@@ -109,6 +109,13 @@
 			<version>2.2.0</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
 	</dependencies>
 
 	<build>
@@ -124,7 +131,21 @@
 						</exclude>
 					</excludes>
 				</configuration>
-			</plugin>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.10.1</version>
+					<configuration>
+						<annotationProcessorPaths>
+							<path>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok</artifactId>
+								<version>${lombok.version}</version>
+							</path>
+						</annotationProcessorPaths>
+					</configuration>
+				</plugin>
 		</plugins>
 	</build>
 
