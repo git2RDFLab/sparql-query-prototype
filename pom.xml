@@ -13,7 +13,7 @@
 
 	<groupId>de.leipzig.htwk.gitrdf.sparql</groupId>
 	<artifactId>query</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 
 	<name>query</name>
 
@@ -25,8 +25,8 @@
 		<org.eclipse.jgit.version>3.5.0.201409260305-r</org.eclipse.jgit.version>
 		<org.apache.commons.commons-rdf-api.version>0.5.0</org.apache.commons.commons-rdf-api.version>
 		<org.apache.commons.commons-rdf-jena.version>0.5.0</org.apache.commons.commons-rdf-jena.version>
-		<lombok.version>1.18.30</lombok.version>
-		<de.leipzig.htwk.gitrdf.database.common.version>1.0.6-SNAPSHOT</de.leipzig.htwk.gitrdf.database.common.version>
+		<lombok.version>1.18.38</lombok.version>
+		<de.leipzig.htwk.gitrdf.database.common.version>1.0.8-SNAPSHOT</de.leipzig.htwk.gitrdf.database.common.version>
 	</properties>
 
 	<dependencies>
@@ -118,35 +118,28 @@
 
 	</dependencies>
 
-	<build>
-		<plugins>
+   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <!-- NO -proc:none here -->
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>1.18.38</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
 			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<excludes>
-						<exclude>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-						</exclude>
-					</excludes>
-				</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.10.1</version>
-					<configuration>
-						<annotationProcessorPaths>
-							<path>
-								<groupId>org.projectlombok</groupId>
-								<artifactId>lombok</artifactId>
-								<version>${lombok.version}</version>
-							</path>
-						</annotationProcessorPaths>
-					</configuration>
-				</plugin>
-		</plugins>
-	</build>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+    </plugins>
+  </build>
 
 </project>
