@@ -40,8 +40,8 @@ public class QueryController {
     private final SparqlQueryServiceImpl sparqlQueryService;
 
     @Operation(
-            summary = "Perform a SPARQL-Query on the produced rdf of the github entry corresponding to the id",
-            description = "Provide the query as a query parameter named 'query'")
+            summary = "Perform a SPARQL-Query on repository RDF data + statistics (excludes ratings for performance)",
+            description = "Provide the query as a query parameter named 'query'. This endpoint loads the base Git repository RDF and statistics data, but excludes ratings to avoid timeouts.")
     @ApiResponse(
             responseCode = "200",
             description = "SPARQL-Query result in json",
@@ -88,8 +88,8 @@ public class QueryController {
     }
 
     @Operation(
-            summary = "Perform a SPARQL-Query on the produced rdf of the github entry corresponding to the id",
-            description = "Provide the query url encoded in the request body as 'query' field")
+            summary = "Perform a SPARQL-Query on repository RDF data + statistics (excludes ratings for performance)",
+            description = "Provide the query url encoded in the request body as 'query' field. This endpoint loads the base Git repository RDF and statistics data, but excludes ratings to avoid timeouts.")
     @ApiResponse(
             responseCode = "200",
             description = "SPARQL-Query result in json",
@@ -139,8 +139,8 @@ public class QueryController {
     }
 
     @Operation(
-            summary = "Perform a SPARQL-query on the produced rdf of the github entry corresponding to the id",
-            description = "Provide the query directly in the body")
+            summary = "Perform a SPARQL-Query on repository RDF data + statistics (excludes ratings for performance)",
+            description = "Provide the query directly in the body. This endpoint loads the base Git repository RDF and statistics data, but excludes ratings to avoid timeouts.")
     @ApiResponse(
             responseCode = "200",
             description = "SPARQL-Query result in json",
@@ -189,6 +189,66 @@ public class QueryController {
         return getQueryJsonResultResponseFrom(id, query);
     }
 
+    @Operation(
+            summary = "Perform a SPARQL-Query on all data (repository + ratings + statistics) - may be slow",
+            description = "Provide the query as a query parameter named 'query'. This endpoint loads repository RDF plus all ratings and statistics data. Use with caution for repositories with many ratings as it may timeout.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "SPARQL-Query result in json",
+            content = @Content(
+                    mediaType = "application/sparql-results+json",
+                    schema = @Schema(example = "{\"head\": {\"vars\": [ \"commit\", \"rating\" ]} ,\"results\": {\"bindings\": [{\"commit\": { \"type\": \"uri\" , \"value\": \"https://github.com/dotnet/core/commit/b0ec7806d47408656cb17230f8875cc9413064e0\"}, \"rating\": {\"type\": \"literal\", \"value\": \"4.5\"}}]}}")))
+    @ApiResponse(
+            responseCode = "400",
+            description = "Bad Request",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = BadRequestErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = NotFoundErrorResponse.class)))
+    @GeneralInternalServerErrorApiResponse
+    @GetMapping(value = "/rdf/query-combined/{id}", produces = "application/sparql-results+json")
+    public @ResponseBody Resource getCombinedQueryResult(
+            @PathVariable("id") String id,
+            @RequestParam("query") String query) throws SQLException, IOException {
+
+        return getCombinedQueryJsonResultResponseFrom(id, query);
+    }
+
+    @Operation(
+            summary = "Perform a SPARQL-Query on ratings and statistics data only",
+            description = "Provide the query as a query parameter named 'query'. This endpoint only loads ratings and statistics RDF data, excluding the base repository data.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "SPARQL-Query result in json",
+            content = @Content(
+                    mediaType = "application/sparql-results+json",
+                    schema = @Schema(example = "{\"head\": {\"vars\": [ \"rating\" ]} ,\"results\": {\"bindings\": [{\"rating\": { \"type\": \"literal\" , \"value\": \"4.5\"}}]}}")))
+    @ApiResponse(
+            responseCode = "400",
+            description = "Bad Request",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = BadRequestErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Not found",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = NotFoundErrorResponse.class)))
+    @GeneralInternalServerErrorApiResponse
+    @GetMapping(value = "/rdf/query-analysis/{id}", produces = "application/sparql-results+json")
+    public @ResponseBody Resource getAnalysisQueryResult(
+            @PathVariable("id") String id,
+            @RequestParam("query") String query) throws SQLException, IOException {
+
+        return getAnalysisDataQueryJsonResultResponseFrom(id, query);
+    }
+
     private Resource getQueryJsonResultResponseFrom(String entityId, String query) throws SQLException, IOException {
 
         long longId = LongUtils.convertStringToLongIdOrThrowException(entityId);
@@ -196,6 +256,28 @@ public class QueryController {
         throwExceptionOnEmptyQueryString(query);
 
         File tempRdfQueryResultJsonFile = sparqlQueryService.performSparqlQuery(longId, query);
+
+        return new InputStreamResource(new BufferedInputStream(new FileInputStream(tempRdfQueryResultJsonFile)));
+    }
+
+    private Resource getCombinedQueryJsonResultResponseFrom(String entityId, String query) throws SQLException, IOException {
+
+        long longId = LongUtils.convertStringToLongIdOrThrowException(entityId);
+
+        throwExceptionOnEmptyQueryString(query);
+
+        File tempRdfQueryResultJsonFile = sparqlQueryService.performSparqlQueryCombined(longId, query);
+
+        return new InputStreamResource(new BufferedInputStream(new FileInputStream(tempRdfQueryResultJsonFile)));
+    }
+
+    private Resource getAnalysisDataQueryJsonResultResponseFrom(String entityId, String query) throws SQLException, IOException {
+
+        long longId = LongUtils.convertStringToLongIdOrThrowException(entityId);
+
+        throwExceptionOnEmptyQueryString(query);
+
+        File tempRdfQueryResultJsonFile = sparqlQueryService.performSparqlQueryAnalysisData(longId, query);
 
         return new InputStreamResource(new BufferedInputStream(new FileInputStream(tempRdfQueryResultJsonFile)));
     }
