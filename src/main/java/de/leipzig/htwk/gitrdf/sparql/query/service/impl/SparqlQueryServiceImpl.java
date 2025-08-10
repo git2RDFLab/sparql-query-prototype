@@ -148,6 +148,75 @@ public class SparqlQueryServiceImpl {
         return resultRdfFile;
     }
 
+    @Transactional(rollbackFor = { SQLException.class, IOException.class })
+    public File performSparqlQueryExpertData(long entryId, String queryString) throws SQLException, IOException {
+        File resultRdfFile = File.createTempFile("json-result-rdf-file", "json");
+
+        GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
+                .find(GithubRepositoryOrderEntityLobs.class, entryId);
+
+        if (githubRepositoryOrderEntityLobs == null) {
+            throw NotFoundException.githubEntryNotFound(entryId);
+        }
+
+        GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
+
+        if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
+            throw BadRequestException.githubToRdfConversionNotDone(entryId);
+        }
+
+        try {
+            Model baseModel = loadBaseGitRdfModel(githubRepositoryOrderEntityLobs);
+            Model expertModel = loadAnalysisRdfModel(entryId, AnalysisType.EXPERT);
+            Model combinedModel = ModelFactory.createUnion(baseModel, expertModel);
+            
+            Query rdfQuery = QueryFactory.create(queryString);
+            executeQuery(rdfQuery, combinedModel, resultRdfFile);
+        } catch (Exception e) {
+            log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+            throw e;
+        }
+
+        return resultRdfFile;
+    }
+
+    @Transactional(rollbackFor = { SQLException.class, IOException.class })
+    public File performSparqlQueryAllData(long entryId, String queryString) throws SQLException, IOException {
+        File resultRdfFile = File.createTempFile("json-result-rdf-file", "json");
+
+        GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
+                .find(GithubRepositoryOrderEntityLobs.class, entryId);
+
+        if (githubRepositoryOrderEntityLobs == null) {
+            throw NotFoundException.githubEntryNotFound(entryId);
+        }
+
+        GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
+
+        if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
+            throw BadRequestException.githubToRdfConversionNotDone(entryId);
+        }
+
+        try {
+            Model baseModel = loadBaseGitRdfModel(githubRepositoryOrderEntityLobs);
+            Model ratingsModel = loadAnalysisRdfModel(entryId, AnalysisType.RATING);
+            Model statisticsModel = loadAnalysisRdfModel(entryId, AnalysisType.STATISTIC);
+            Model expertModel = loadAnalysisRdfModel(entryId, AnalysisType.EXPERT);
+            
+            Model combinedModel = ModelFactory.createUnion(baseModel, ratingsModel);
+            combinedModel = ModelFactory.createUnion(combinedModel, statisticsModel);
+            combinedModel = ModelFactory.createUnion(combinedModel, expertModel);
+            
+            Query rdfQuery = QueryFactory.create(queryString);
+            executeQuery(rdfQuery, combinedModel, resultRdfFile);
+        } catch (Exception e) {
+            log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+            throw e;
+        }
+
+        return resultRdfFile;
+    }
+
 
     private Model loadBaseGitRdfModel(GithubRepositoryOrderEntityLobs lobs)
             throws SQLException, IOException {
