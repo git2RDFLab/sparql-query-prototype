@@ -34,6 +34,8 @@ import de.leipzig.htwk.gitrdf.database.common.entity.lob.GithubRepositoryOrderEn
 import de.leipzig.htwk.gitrdf.database.common.repository.GithubRepositoryOrderAnalysisRepository;
 import de.leipzig.htwk.gitrdf.sparql.query.api.exception.BadRequestException;
 import de.leipzig.htwk.gitrdf.sparql.query.api.exception.NotFoundException;
+import de.leipzig.htwk.gitrdf.sparql.query.service.QueryType;
+import de.leipzig.htwk.gitrdf.sparql.query.service.TripleStoreManager;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,34 +51,53 @@ public class SparqlQueryServiceImpl {
 
     private final EntityManager entityManager;
     private final GithubRepositoryOrderAnalysisRepository analysisRepository;
+    private final TripleStoreManager tripleStoreManager;
 
 
     @Transactional(rollbackFor = { SQLException.class, IOException.class })
     public File performSparqlQuery(long entryId, String queryString) throws SQLException, IOException {
         File resultRdfFile = File.createTempFile("json-result-rdf-file", "json");
 
-        GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
-                .find(GithubRepositoryOrderEntityLobs.class, entryId);
+        // Check if model exists in store manager first
+        Model combinedModel = tripleStoreManager.getStore(entryId, QueryType.BASIC).orElse(null);
+        
+        if (combinedModel == null) {
+            // Load from database if not in store manager
+            GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
+                    .find(GithubRepositoryOrderEntityLobs.class, entryId);
 
-        if (githubRepositoryOrderEntityLobs == null) {
-            throw NotFoundException.githubEntryNotFound(entryId);
-        }
+            if (githubRepositoryOrderEntityLobs == null) {
+                throw NotFoundException.githubEntryNotFound(entryId);
+            }
 
-        GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
+            GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
 
-        if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
-            throw BadRequestException.githubToRdfConversionNotDone(entryId);
+            if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
+                throw BadRequestException.githubToRdfConversionNotDone(entryId);
+            }
+
+            try {
+                Model baseModel = loadBaseGitRdfModel(githubRepositoryOrderEntityLobs);
+                Model statisticsModel = loadAnalysisRdfModel(entryId, AnalysisType.STATISTIC);
+                combinedModel = ModelFactory.createUnion(baseModel, statisticsModel);
+                
+                // Store the combined model for future use
+                tripleStoreManager.putStore(entryId, QueryType.BASIC, combinedModel);
+                
+                log.info("Loaded and cached new model for order {} with BASIC query type", entryId);
+            } catch (Exception e) {
+                log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+                throw e;
+            }
+        } else {
+            log.debug("Using cached model for order {} with BASIC query type", entryId);
         }
 
         try {
-            Model baseModel = loadBaseGitRdfModel(githubRepositoryOrderEntityLobs);
-            Model statisticsModel = loadAnalysisRdfModel(entryId, AnalysisType.STATISTIC);
-            Model combinedModel = ModelFactory.createUnion(baseModel, statisticsModel);
-            
             Query rdfQuery = QueryFactory.create(queryString);
             executeQuery(rdfQuery, combinedModel, resultRdfFile);
         } catch (Exception e) {
-            log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+            log.error("SPARQL query execution failed for order {}: {}", entryId, e.getMessage());
             throw e;
         }
 
@@ -87,30 +108,48 @@ public class SparqlQueryServiceImpl {
     public File performSparqlQueryCombined(long entryId, String queryString) throws SQLException, IOException {
         File resultRdfFile = File.createTempFile("json-result-rdf-file", "json");
 
-        GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
-                .find(GithubRepositoryOrderEntityLobs.class, entryId);
+        // Check if model exists in store manager first
+        Model combinedModel = tripleStoreManager.getStore(entryId, QueryType.COMBINED).orElse(null);
+        
+        if (combinedModel == null) {
+            // Load from database if not in store manager
+            GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
+                    .find(GithubRepositoryOrderEntityLobs.class, entryId);
 
-        if (githubRepositoryOrderEntityLobs == null) {
-            throw NotFoundException.githubEntryNotFound(entryId);
-        }
+            if (githubRepositoryOrderEntityLobs == null) {
+                throw NotFoundException.githubEntryNotFound(entryId);
+            }
 
-        GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
+            GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
 
-        if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
-            throw BadRequestException.githubToRdfConversionNotDone(entryId);
+            if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
+                throw BadRequestException.githubToRdfConversionNotDone(entryId);
+            }
+
+            try {
+                Model baseModel = loadBaseGitRdfModel(githubRepositoryOrderEntityLobs);
+                Model ratingsModel = loadAnalysisRdfModel(entryId, AnalysisType.RATING);
+                Model statisticsModel = loadAnalysisRdfModel(entryId, AnalysisType.STATISTIC);
+                combinedModel = ModelFactory.createUnion(baseModel, ratingsModel);
+                combinedModel = ModelFactory.createUnion(combinedModel, statisticsModel);
+                
+                // Store the combined model for future use
+                tripleStoreManager.putStore(entryId, QueryType.COMBINED, combinedModel);
+                
+                log.info("Loaded and cached new model for order {} with COMBINED query type", entryId);
+            } catch (Exception e) {
+                log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+                throw e;
+            }
+        } else {
+            log.debug("Using cached model for order {} with COMBINED query type", entryId);
         }
 
         try {
-            Model baseModel = loadBaseGitRdfModel(githubRepositoryOrderEntityLobs);
-            Model ratingsModel = loadAnalysisRdfModel(entryId, AnalysisType.RATING);
-            Model statisticsModel = loadAnalysisRdfModel(entryId, AnalysisType.STATISTIC);
-            Model combinedModel = ModelFactory.createUnion(baseModel, ratingsModel);
-            combinedModel = ModelFactory.createUnion(combinedModel, statisticsModel);
-            
             Query rdfQuery = QueryFactory.create(queryString);
             executeQuery(rdfQuery, combinedModel, resultRdfFile);
         } catch (Exception e) {
-            log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+            log.error("SPARQL query execution failed for order {}: {}", entryId, e.getMessage());
             throw e;
         }
 
@@ -121,27 +160,46 @@ public class SparqlQueryServiceImpl {
     public File performSparqlQueryAnalysisData(long entryId, String queryString) throws SQLException, IOException {
         File resultRdfFile = File.createTempFile("json-result-rdf-file", "json");
 
-        GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
-                .find(GithubRepositoryOrderEntityLobs.class, entryId);
+        // Check if model exists in store manager first
+        Model analysisModel = tripleStoreManager.getStore(entryId, QueryType.ANALYSIS).orElse(null);
+        
+        if (analysisModel == null) {
+            // Load from database if not in store manager
+            GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
+                    .find(GithubRepositoryOrderEntityLobs.class, entryId);
 
-        if (githubRepositoryOrderEntityLobs == null) {
-            throw NotFoundException.githubEntryNotFound(entryId);
-        }
+            if (githubRepositoryOrderEntityLobs == null) {
+                throw NotFoundException.githubEntryNotFound(entryId);
+            }
 
-        GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
+            GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
 
-        if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
-            throw BadRequestException.githubToRdfConversionNotDone(entryId);
+            if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
+                throw BadRequestException.githubToRdfConversionNotDone(entryId);
+            }
+
+            try {
+                Model ratingsModel = loadAnalysisRdfModel(entryId, AnalysisType.RATING);
+                Model statisticsModel = loadAnalysisRdfModel(entryId, AnalysisType.STATISTIC);
+                analysisModel = ModelFactory.createUnion(ratingsModel, statisticsModel);
+                
+                // Store the combined model for future use
+                tripleStoreManager.putStore(entryId, QueryType.ANALYSIS, analysisModel);
+                
+                log.info("Loaded and cached new model for order {} with ANALYSIS query type", entryId);
+            } catch (Exception e) {
+                log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+                throw e;
+            }
+        } else {
+            log.debug("Using cached model for order {} with ANALYSIS query type", entryId);
         }
 
         try {
-            Model ratingsModel = loadAnalysisRdfModel(entryId, AnalysisType.RATING);
-            Model statisticsModel = loadAnalysisRdfModel(entryId, AnalysisType.STATISTIC);
-            Model analysisModel = ModelFactory.createUnion(ratingsModel, statisticsModel);
             Query rdfQuery = QueryFactory.create(queryString);
             executeQuery(rdfQuery, analysisModel, resultRdfFile);
         } catch (Exception e) {
-            log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+            log.error("SPARQL query execution failed for order {}: {}", entryId, e.getMessage());
             throw e;
         }
 
@@ -152,28 +210,46 @@ public class SparqlQueryServiceImpl {
     public File performSparqlQueryExpertData(long entryId, String queryString) throws SQLException, IOException {
         File resultRdfFile = File.createTempFile("json-result-rdf-file", "json");
 
-        GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
-                .find(GithubRepositoryOrderEntityLobs.class, entryId);
+        // Check if model exists in store manager first
+        Model combinedModel = tripleStoreManager.getStore(entryId, QueryType.EXPERT).orElse(null);
+        
+        if (combinedModel == null) {
+            // Load from database if not in store manager
+            GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
+                    .find(GithubRepositoryOrderEntityLobs.class, entryId);
 
-        if (githubRepositoryOrderEntityLobs == null) {
-            throw NotFoundException.githubEntryNotFound(entryId);
-        }
+            if (githubRepositoryOrderEntityLobs == null) {
+                throw NotFoundException.githubEntryNotFound(entryId);
+            }
 
-        GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
+            GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
 
-        if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
-            throw BadRequestException.githubToRdfConversionNotDone(entryId);
+            if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
+                throw BadRequestException.githubToRdfConversionNotDone(entryId);
+            }
+
+            try {
+                Model baseModel = loadBaseGitRdfModel(githubRepositoryOrderEntityLobs);
+                Model expertModel = loadAnalysisRdfModel(entryId, AnalysisType.EXPERT);
+                combinedModel = ModelFactory.createUnion(baseModel, expertModel);
+                
+                // Store the combined model for future use
+                tripleStoreManager.putStore(entryId, QueryType.EXPERT, combinedModel);
+                
+                log.info("Loaded and cached new model for order {} with EXPERT query type", entryId);
+            } catch (Exception e) {
+                log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+                throw e;
+            }
+        } else {
+            log.debug("Using cached model for order {} with EXPERT query type", entryId);
         }
 
         try {
-            Model baseModel = loadBaseGitRdfModel(githubRepositoryOrderEntityLobs);
-            Model expertModel = loadAnalysisRdfModel(entryId, AnalysisType.EXPERT);
-            Model combinedModel = ModelFactory.createUnion(baseModel, expertModel);
-            
             Query rdfQuery = QueryFactory.create(queryString);
             executeQuery(rdfQuery, combinedModel, resultRdfFile);
         } catch (Exception e) {
-            log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+            log.error("SPARQL query execution failed for order {}: {}", entryId, e.getMessage());
             throw e;
         }
 
@@ -184,33 +260,51 @@ public class SparqlQueryServiceImpl {
     public File performSparqlQueryAllData(long entryId, String queryString) throws SQLException, IOException {
         File resultRdfFile = File.createTempFile("json-result-rdf-file", "json");
 
-        GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
-                .find(GithubRepositoryOrderEntityLobs.class, entryId);
+        // Check if model exists in store manager first
+        Model combinedModel = tripleStoreManager.getStore(entryId, QueryType.ALL).orElse(null);
+        
+        if (combinedModel == null) {
+            // Load from database if not in store manager
+            GithubRepositoryOrderEntityLobs githubRepositoryOrderEntityLobs = entityManager
+                    .find(GithubRepositoryOrderEntityLobs.class, entryId);
 
-        if (githubRepositoryOrderEntityLobs == null) {
-            throw NotFoundException.githubEntryNotFound(entryId);
-        }
+            if (githubRepositoryOrderEntityLobs == null) {
+                throw NotFoundException.githubEntryNotFound(entryId);
+            }
 
-        GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
+            GithubRepositoryOrderEntity githubRepositoryOrderEntity = githubRepositoryOrderEntityLobs.getOrderEntity();
 
-        if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
-            throw BadRequestException.githubToRdfConversionNotDone(entryId);
+            if (!githubRepositoryOrderEntity.getStatus().equals(GitRepositoryOrderStatus.DONE)) {
+                throw BadRequestException.githubToRdfConversionNotDone(entryId);
+            }
+
+            try {
+                Model baseModel = loadBaseGitRdfModel(githubRepositoryOrderEntityLobs);
+                Model ratingsModel = loadAnalysisRdfModel(entryId, AnalysisType.RATING);
+                Model statisticsModel = loadAnalysisRdfModel(entryId, AnalysisType.STATISTIC);
+                Model expertModel = loadAnalysisRdfModel(entryId, AnalysisType.EXPERT);
+                
+                combinedModel = ModelFactory.createUnion(baseModel, ratingsModel);
+                combinedModel = ModelFactory.createUnion(combinedModel, statisticsModel);
+                combinedModel = ModelFactory.createUnion(combinedModel, expertModel);
+                
+                // Store the combined model for future use
+                tripleStoreManager.putStore(entryId, QueryType.ALL, combinedModel);
+                
+                log.info("Loaded and cached new model for order {} with ALL query type", entryId);
+            } catch (Exception e) {
+                log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+                throw e;
+            }
+        } else {
+            log.debug("Using cached model for order {} with ALL query type", entryId);
         }
 
         try {
-            Model baseModel = loadBaseGitRdfModel(githubRepositoryOrderEntityLobs);
-            Model ratingsModel = loadAnalysisRdfModel(entryId, AnalysisType.RATING);
-            Model statisticsModel = loadAnalysisRdfModel(entryId, AnalysisType.STATISTIC);
-            Model expertModel = loadAnalysisRdfModel(entryId, AnalysisType.EXPERT);
-            
-            Model combinedModel = ModelFactory.createUnion(baseModel, ratingsModel);
-            combinedModel = ModelFactory.createUnion(combinedModel, statisticsModel);
-            combinedModel = ModelFactory.createUnion(combinedModel, expertModel);
-            
             Query rdfQuery = QueryFactory.create(queryString);
             executeQuery(rdfQuery, combinedModel, resultRdfFile);
         } catch (Exception e) {
-            log.error("SPARQL query failed for order {}: {}", entryId, e.getMessage());
+            log.error("SPARQL query execution failed for order {}: {}", entryId, e.getMessage());
             throw e;
         }
 
